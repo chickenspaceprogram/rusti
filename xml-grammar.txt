@@ -1,0 +1,20 @@
+any identifiers surrounded by _underscores_ are terminals
+anything surrounded by /forward slashes/ is a regular expression
+
+Nonterminals:
+
+file := _version_ _comment_ tokens
+tokens := twobyte tokens | _empty_
+twobyte := _two-byte-def_ token _end-two-byte_ | token
+token := _tok-start_ versions _tok-end_
+
+
+Terminals:
+
+(these kinda suck as definitions but they work, so idc)
+_version_ := /<?xml version="[0-9]\.[0-9]" encoding="UTF-8"?>/
+_comment_ := /<!--.*-->/
+_empty_ := 
+_two-byte-def_ := /<two-byte value="$[0-9a-fA-F]{2}">/
+_end-two-byte_ := /</two_byte>/
+_tok-start_ := /<token value="$00">/
