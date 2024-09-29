@@ -19,7 +19,7 @@ impl Node {
     }
 }
 
-pub fn parse_dom(mut text: &str) {
+pub fn parse_xml(mut text: &str) {
     // quickly matching the version and comment from the xml since we don't care about those
     // if an issue occurs here, we don't care, but we should tell the user that they're being an idiot.
     match xml_version(text) {
