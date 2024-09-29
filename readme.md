@@ -14,6 +14,6 @@ This library is intended to be used as part of a larger program to compile and d
 
 For information on how to format the headers and actually send the data this program creates to a calculator, check out Merthsoft's [link guide](https://merthsoft.com/linkguide/ti83+/), specifically the pages on [packet formats](https://merthsoft.com/linkguide/ti83+/packet.html) and [file formats](https://merthsoft.com/linkguide/ti83+/fformat.html). 
 
-This library only creates the "variable data" part of the file format listed on the [file formats](https://merthsoft.com/linkguide/ti83+/fformat.html) page. It can tokenize programs, Y-Vars, and strings.
+This library only creates the "variable data" part of the file format listed on Merthsoft's [file formats](https://merthsoft.com/linkguide/ti83+/fformat.html) page. It can tokenize programs, Y-Vars, and strings.
 
 This library uses the [TI-Toolkit Token Sheets](https://github.com/TI-Toolkit/tokens).
