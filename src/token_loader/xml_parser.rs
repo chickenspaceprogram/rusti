@@ -13,10 +13,12 @@ impl fmt::Display for XMLParsingError {
 }
 
 /// A node of the DOM for the parsed XML
+#[derive(Debug)]
 pub struct Node {
     pub children: Vec<Node>,
     pub node_type: Option<String>,
     pub attributes: HashMap<String, String>,
+    pub data: Option<String>,
 }
 
 // global variables aren't great but they were neater than passing the same regexes everywhere or compiling them repeatedly
@@ -38,13 +40,15 @@ impl Node {
             children: Vec::new(),
             node_type: Some(nodetype),
             attributes: HashMap::new(),
+            data: None,
         }
     }
-    pub fn new_data_node(data: String) -> Node {
+    pub fn new_data_node(data: &String) -> Node {
         return Node {
             children: Vec::new(),
             node_type: None,
             attributes: HashMap::new(),
+            data: Some(data.clone()),
         }
     }
     
@@ -103,7 +107,7 @@ impl Node {
 /// 
 /// This isn't a general XML parser, it's only intended to parse the tokensheet specifically.
 /// It could probably be turned into a more general, proper XML parser if I cared and had the time, but this works.
-pub fn parse_xml(mut text: &str) {
+pub fn parse_xml(mut text: &str) -> Node {
 
     // quickly matching the version and comment from the XML since we don't care about those
     // if an issue occurs here, we don't care, but we should tell the user that they're being an idiot.
@@ -117,8 +121,8 @@ pub fn parse_xml(mut text: &str) {
     }
     let mut main_node = Node::new_structure_node("main".to_string());
 
-    make_node(Ok(text), &mut main_node);
-
+    let text = make_node(Ok(text), &mut main_node);
+    return main_node; // incorporate error handlin!
 }
 
 
@@ -132,32 +136,53 @@ fn make_node<'a>(file_slice: Result<&'a str, XMLParsingError>, last_node: &mut N
     match TAG.captures(slice) {
         Some(result) => {
             let mut current_node: Node = Node::new_structure_node(result.get(1).unwrap().as_str().to_string()); // we can unwrap because this will always be in the match
-            end_tag = format!("</{}>", current_node.node_type.unwrap()); // unwrap is safe here, we just set the node type so we know it is not None
+            end_tag = format!("</{}>", current_node.node_type.clone().unwrap()); // unwrap is safe here, we just set the node type so we know it is not None
             slice = &slice[result.get(0).unwrap().len()..]; // advancing slice
 
             // grabbing all of the subtags we can. make_node will put those subtags into current_node.children so we don't have to worry about anything
             loop {
                 match make_node(Ok(slice), &mut current_node)? { // if an error's been thrown we also want to throw that error
-                    Some(new_slice) => slice = new_slice,
-                    None => break,
+                    Some(new_slice) => {
+                        slice = new_slice;
+                    }
+                    None => {
+                        slice = grab_whitespace(slice);
+                        break;
+                    },
                 }
             }
             // if the next tag isn't our end tag, the XML is not formatted correctly
             if slice[..end_tag.len()] != end_tag {
                 return Err(XMLParsingError);
             } else {
-                slice = &slice[end_tag.len()..];
+                return Ok(Some(&slice[end_tag.len()..]))
             }
 
         }
         None => {
-            let valid_next_ending_tag = format!("</{}>", last_node.node_type.expect("Error: Data nodes should not recursively call make_node.")).as_str();
-            if &slice[..valid_next_ending_tag.len()] == valid_next_ending_tag {
-                return Err(Box::new(NoNextTag));
+            let mut data = String::new();
+            let mut current_char: char;
+            let current_node: Node;
+            let mut chars = slice.chars();
+            loop {
+                match chars.next() {
+                    Some(this_char) => current_char = this_char.clone(),
+                    None => break,
+                }
+                if current_char == '<' {
+                    break;
+                }
+                data.push(current_char);
+            }
+            if !data.is_empty() {
+                current_node = Node::new_data_node(&data);
+                last_node.children.push(current_node);
+                return Ok(Some(&slice[data.len()..]));
+            } else {
+                return Ok(None);
             }
         }
     }
-    println!("ooga booga");
 }
 
 fn grab_whitespace<'a>(file_slice: &'a str) -> &'a str {
