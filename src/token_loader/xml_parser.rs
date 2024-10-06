@@ -1,4 +1,4 @@
-use std::{error::Error, fmt, collections::HashMap, sync::LazyLock};
+use std::{error::Error, fmt, sync::LazyLock};
 use regex::Regex;
 
 #[derive(Debug)]
