@@ -1,2 +1,5 @@
 /target
 .DS_Store
+attributes.txt
+tags_with_attribs.txt
+tags.txt
