@@ -17,8 +17,14 @@ impl fmt::Display for XMLParsingError {
 pub struct Node {
     pub children: Vec<Node>,
     pub node_type: Option<String>,
-    pub attributes: HashMap<String, String>,
+    pub attributes: Vec<Attribute>,
     pub data: Option<String>,
+}
+
+#[derive(Debug)]
+pub struct Attribute {
+    pub key: String,
+    pub value: String,
 }
 
 // global variables aren't great but they were neater than passing the same regexes everywhere or compiling them repeatedly
@@ -39,7 +45,7 @@ impl Node {
         return Node {
             children: Vec::new(),
             node_type: Some(nodetype),
-            attributes: HashMap::new(),
+            attributes: Vec::new(),
             data: None,
         }
     }
@@ -47,7 +53,7 @@ impl Node {
         return Node {
             children: Vec::new(),
             node_type: None,
-            attributes: HashMap::new(),
+            attributes: Vec::new(),
             data: Some(data.clone()),
         }
     }
@@ -86,11 +92,21 @@ impl Node {
                 State::Value => {
                     match current_char {
                         '>' => {
-                            self.attributes.insert(key.clone(), val.clone());
+                            self.attributes.push(
+                                Attribute {
+                                    key: key.clone(),
+                                    value: val.clone(),
+                                }
+                            );
                             return;
                         }
                         '"' | '\'' => {
-                            self.attributes.insert(key.clone(), val.clone());
+                            self.attributes.push(
+                                Attribute {
+                                    key: key.clone(),
+                                    value: val.clone(),
+                                }
+                            );
                             key.clear();
                             val.clear();
                             state = State::Key
@@ -107,13 +123,13 @@ impl Node {
 /// 
 /// This isn't a general XML parser, it's only intended to parse the tokensheet specifically.
 /// It could probably be turned into a more general, proper XML parser if I cared and had the time, but this works.
-pub fn parse_xml(mut text: &str) -> Node {
+pub fn parse_xml(mut text: &str) -> Result<Node, XMLParsingError> {
 
     // quickly matching the version and comment from the XML since we don't care about those
     // if an issue occurs here, we don't care, but we should tell the user that they're being an idiot.
     match xml_version(text) {
         Some(txt) => text = txt,
-        None => println!("Warning: Either no XML version specifier was provided in tokensheet or the specifier was incorrectly formatted."),
+        None => panic!("Warning: Either no XML version specifier was provided in tokensheet or the specifier was incorrectly formatted."),
     }
     match comment(text) {
         Some(txt) => text = txt,
@@ -121,8 +137,10 @@ pub fn parse_xml(mut text: &str) -> Node {
     }
     let mut main_node = Node::new_structure_node("main".to_string());
 
-    let text = make_node(Ok(text), &mut main_node);
-    return main_node; // incorporate error handlin!
+    match make_node(Ok(text), &mut main_node) {
+        Ok(..) => return Ok(main_node), // actually check for errors lol
+        Err(XMLParsingError) => return Err(XMLParsingError),
+    }
 }
 
 
@@ -155,6 +173,7 @@ fn make_node<'a>(file_slice: Result<&'a str, XMLParsingError>, last_node: &mut N
             if slice[..end_tag.len()] != end_tag {
                 return Err(XMLParsingError);
             } else {
+                last_node.children.push(current_node);
                 return Ok(Some(&slice[end_tag.len()..]))
             }
 

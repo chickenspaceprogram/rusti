@@ -6,6 +6,6 @@ mod tests {
     fn it_works() {
         use crate::token_loader;
         let file = include_str!(r"../tokens/8X.xml");
-        let result = token_loader::wrapper(file);
+        let result = token_loader::wrapper(file).unwrap();
     }
 }
