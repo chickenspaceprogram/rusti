@@ -1,6 +1,6 @@
 use std::{error::Error, fmt};
 
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub enum Model {
     Empty,
     TI82,
